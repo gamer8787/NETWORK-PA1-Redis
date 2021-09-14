@@ -29,7 +29,7 @@ runtest() {
     ## Run Prepare
     if test -f "${PWD}/tests/pre.in/$basename"; then
         echo "Preparing..."
-        docker run --rm --name $CLIENT_NAME --network $NETWORK_NAME -v${PWD}/tests/pre.in:/tests:ro -v${OUT_DIR}:/out $REDIS_IMAGE bash -c "cat /tests/$basename | redis-cli --raw -h $SERVER_NAME > /dev/null"
+        docker run --rm --name $CLIENT_NAME --network $NETWORK_NAME -v${PWD}/tests/pre.in:/tests:ro $REDIS_IMAGE bash -c "cat /tests/$basename | redis-cli --raw -h $SERVER_NAME > /dev/null"
     fi
 
     ## Test Server
@@ -122,9 +122,14 @@ runtest_large() {
     
     stop_timeout
 
+
+    ## Cleanup
+    docker rm -f $CLIENT_NAME >/dev/null 2>&1
+    docker rm -f $SERVER_NAME >/dev/null 2>&1
+    docker network rm $NETWORK_NAME >/dev/null 2>&1
+
     rm -rf $TEST_DIR $OUT_DIR $IN_DIR
 }
-
 
 
 for in in tests/in/*.txt; do
@@ -135,4 +140,3 @@ runtest_large 1K
 runtest_large 4K
 runtest_large 2M
 runtest_large 128M
-runtest_large 512M
