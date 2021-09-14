@@ -74,14 +74,15 @@ int main(int argc, char *argv[])
 
     strcat(send, star);
     strcat(send, blank);
-    /*
+    printf("message is %s\n",send);
+    
     for(int i=0;i<strlen(send);i++){
         printf("send char : %d\n", *(send+i));
     }
-    */
+    
     ///////////////////////////////////////////////////////////////////////////////
-
-    if (write(client_socket,&send,sizeof(send))==-1){
+    char send_test[1000]="*2\r\n$4\r\nPING\r\n$15\r\n\"hello world\"\r\n";
+    if (write(client_socket,&send_test,sizeof(send_test))==-1){
         perror("write error");
         exit(1);
     }
@@ -90,10 +91,12 @@ int main(int argc, char *argv[])
     int len;
     len = read(client_socket,&str2,1024);
     printf("message is %s\n",str2);
+    
     if (len==-1){
         perror("read error");
         exit(1);
     }
+    /*
     char *divide = strtok(str2,"\r");
     switch(*str2){
         case '+':
@@ -111,6 +114,7 @@ int main(int argc, char *argv[])
         default :    
             printf("errr\n");
     }
+    */
    
     if (close(client_socket)==-1){
        perror("close error");
