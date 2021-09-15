@@ -74,33 +74,56 @@ int main(int argc, char *argv[])
 
     strcat(send, star);
     strcat(send, blank);
-    printf("message is %s\n",send);
-    
+    /*
     for(int i=0;i<strlen(send);i++){
         printf("send char : %d\n", *(send+i));
     }
-    
+    */
     ///////////////////////////////////////////////////////////////////////////////
     char send_test[1000]="*2\r\n$4\r\nPING\r\n$15\r\n\"hello world\"\r\n";
-    if (write(client_socket,&send_test,sizeof(send_test))==-1){
+    //char send_test2[1000]="*2\r\n*2\r\n$4\r\nping\r\n$11\r\n\"hello world\"\r\n*1\r\n$4\r\nping\r\n";
+    //char send_test3[1000]="*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n";
+    char send_test4[1000]="*1\r\n$4\r\nPING\r\n";
+    char send_test5[1000]="*1\r\n$4\r\nPING\r\n";
+    char send_test6[1000]="*1\r\n$4\r\nPING\r\n";
+    if (write(client_socket,&send_test4,sizeof(send_test4))==-1){
         perror("write error");
         exit(1);
     }
-    
-    char str2[1024];
-    int len;
-    len = read(client_socket,&str2,1024);
-    printf("message is %s\n",str2);
-    
-    if (len==-1){
+    char str2[1024];  
+    if (read(client_socket,&str2,1024)==-1){
         perror("read error");
         exit(1);
     }
-    /*
+    printf("message1111 is %s\n",str2);
+    if (write(client_socket,&send_test5,sizeof(send_test5))==-1){
+        perror("write error");
+        exit(1);
+    }
+
+    char str3[1024];
+    if (read(client_socket,&str3,1024)==-1){
+        perror("read error");
+        exit(1);
+    }
+    printf("message is %s\n",str3);
+
+    if (write(client_socket,&send_test6,sizeof(send_test6))==-1){
+        perror("write error");
+        exit(1);
+    }
+
+    char str4[1024];
+    if (read(client_socket,&str4,1024)==-1){
+        perror("read error");
+        exit(1);
+    }
+    printf("message is %s\n",str4);
+    
     char *divide = strtok(str2,"\r");
     switch(*str2){
         case '+':
-            printf("%s\n",divide+1);
+            //printf("%s\n",divide+1);
             divide = strtok(NULL,"\r");
         case '-':
             break;
@@ -108,13 +131,12 @@ int main(int argc, char *argv[])
             break;
         case '$':
             divide = strtok(NULL,"\r");
-            printf("%s\n",divide+1);
+            //printf("%s\n",divide+1);
         case '*':
             break;
         default :    
             printf("errr\n");
     }
-    */
    
     if (close(client_socket)==-1){
        perror("close error");
@@ -130,3 +152,4 @@ int index(char * str, char c){
         }
     }
 }
+//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
