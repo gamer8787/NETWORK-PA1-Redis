@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     }
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // make resp form
     char send[1024]="";
@@ -79,49 +79,25 @@ int main(int argc, char *argv[])
         printf("send char : %d\n", *(send+i));
     }
     */
-    ///////////////////////////////////////////////////////////////////////////////
-    char send_test[1000]="*2\r\n$4\r\nPING\r\n$15\r\n\"hello world\"\r\n";
-    //char send_test2[1000]="*2\r\n*2\r\n$4\r\nping\r\n$11\r\n\"hello world\"\r\n*1\r\n$4\r\nping\r\n";
-    //char send_test3[1000]="*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n";
-    char send_test4[1000]="*1\r\n$4\r\nPING\r\n";
-    char send_test5[1000]="*1\r\n$4\r\nPING\r\n";
-    char send_test6[1000]="*1\r\n$4\r\nPING\r\n";
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    char send_test4[1000]="*2\r\n$4\r\nPING\r\n$5\r\nhello\r\n\n*1\r\n$4\r\nPING\r\n\n*2\r\n$4\r\nPING\r\n$10\r\nhelloworld\r\n";
     if (write(client_socket,&send_test4,sizeof(send_test4))==-1){
         perror("write error");
         exit(1);
     }
-    char str2[1024];  
-    if (read(client_socket,&str2,1024)==-1){
+
+    char read_message[1024];  
+    if (read(client_socket,&read_message,1024)==-1){
         perror("read error");
         exit(1);
     }
-    printf("message1111 is %s\n",str2);
-    if (write(client_socket,&send_test5,sizeof(send_test5))==-1){
-        perror("write error");
-        exit(1);
-    }
+    printf("message1111 is %s\n",read_message);
 
-    char str3[1024];
-    if (read(client_socket,&str3,1024)==-1){
-        perror("read error");
-        exit(1);
-    }
-    printf("message is %s\n",str3);
-
-    if (write(client_socket,&send_test6,sizeof(send_test6))==-1){
-        perror("write error");
-        exit(1);
-    }
-
-    char str4[1024];
-    if (read(client_socket,&str4,1024)==-1){
-        perror("read error");
-        exit(1);
-    }
-    printf("message is %s\n",str4);
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-    char *divide = strtok(str2,"\r");
-    switch(*str2){
+    char *divide = strtok(read_message,"\r");
+    switch(*read_message){
         case '+':
             //printf("%s\n",divide+1);
             divide = strtok(NULL,"\r");
