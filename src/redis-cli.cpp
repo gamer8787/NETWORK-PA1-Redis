@@ -48,32 +48,38 @@ int main(int argc, char *argv[])
 
     // make resp form
     char send[1024]="";
-    char len_string[5]; 
-    char bulk[1024];
-    char blank[1024]="";
-    char rn[5] = "\r\n";
-    char star[10] = "*";
-    int num_bulk=0;
-    while(fgets(bulk,sizeof(bulk),stdin)!=NULL){
-        char len_bulk[10]="";
-        char dollar[10]="$";
-        if (bulk[strlen(bulk)-1]=='\n')
-            bulk[strlen(bulk)-1]='\0';
-        sprintf(len_bulk, "%d",strlen(bulk)); 
-        strcat(dollar,len_bulk);
-        strcat(blank,dollar);
-        strcat(blank,rn);
-        strcat(blank,bulk);
-        strcat(blank,rn);
-        num_bulk++;
+    char rn[5]="\r\n";
+    char command[1024];
+    char dollar[2]="$";
+    char star[2]="*";
+    while(fgets(command,sizeof(command),stdin)!=NULL){
+        if(strncmp(command,"PING",4)==0){
+            if(strncmp(command+4,"                        ",strlen(command)-4)==0){
+                char str_len[10]="";
+                strcat(send,star);
+                strcat(send,"1");
+                strcat(send,rn);
+                strcat(send,dollar);
+                sprintf(str_len, "%ld",strlen(command)); 
+                strcat(send,str_len);
+                strcat(send,rn);
+                strcat(send,command);
+                strcat(send,rn);
+            }
+            else{
+                char str_len[10]="";
+                strcat(send,star);
+                strcat(send,"1");
+                strcat(send,rn);
+                strcat(send,dollar);
+                sprintf(str_len, "%ld",strlen(command)); 
+                strcat(send,str_len);
+                strcat(send,rn);
+                strcat(send,command);
+                strcat(send,rn);
+            }
+        }
     }
-    char char_num_bulk[10];
-    sprintf(char_num_bulk, "%d",num_bulk); 
-    strcat(star,char_num_bulk);
-    strcat(star,rn);
-
-    strcat(send, star);
-    strcat(send, blank);
     /*
     for(int i=0;i<strlen(send);i++){
         printf("send char : %d\n", *(send+i));
@@ -127,5 +133,6 @@ int index(char * str, char c){
             return i;
         }
     }
+    return 0;
 }
 //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
