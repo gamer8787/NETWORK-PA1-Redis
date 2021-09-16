@@ -56,6 +56,9 @@ int main(int argc, char *argv[])
         if (command[strlen(command)-1]=='\n')
             command[strlen(command)-1]='\0';
         if(strncmp(command,"PING ",(strlen(command)) <5 ? 4 : 5)==0){
+            strcat(send,command); //modify later
+            strcat(send,rn); 
+            /*
             if(strncmp(command+4,"                                       ",strlen(command)-4)==0){
                 char str_len[10]="";
                 strcat(send,star);
@@ -85,9 +88,11 @@ int main(int argc, char *argv[])
                 strcat(send,command+5);
                 strcat(send,rn);
             }
+            */
         }
-        
         else if(strncmp(command,"GET ",4)==0){
+            char *bulk = strtok(command," ");
+            exit(1);
             ;
         }
         /*
@@ -117,8 +122,13 @@ int main(int argc, char *argv[])
     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //char send_test4[1000]="*2\r\n$4\r\nPING\r\n$5\r\nhello\r\n\n*1\r\n$4\r\nPING\r\n\n*2\r\n$4\r\nPING\r\n$10\r\nhelloworld\r\n";
-    if (write(client_socket,&send,sizeof(send))==-1){
+    char send_test1[1000]="*3\r\n$3\r\nSET\r\n$5\r\nmykey\r\n$8\r\nhello hi\r\n";
+    char n[2]="\n";
+    char send_test2[1000]="*2\r\n$3\r\nGET\r\n$5\r\nmykey\r\n";
+    strcat(send_test1,n);
+    strcat(send_test1,send_test2);
+
+    if (write(client_socket,&send_test1,sizeof(send_test1))==-1){
         perror("write error");
         exit(1);
     }
@@ -128,11 +138,12 @@ int main(int argc, char *argv[])
         perror("read error");
         exit(1);
     }
-    //printf("%s\n",read_message);
+    printf("read_message is %s\n",read_message);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     char *divide = strtok(read_message,"\r");
+    /*
     switch(*read_message){
         case '+':
             printf("%s\n",divide+1);
@@ -149,6 +160,7 @@ int main(int argc, char *argv[])
         default :    
             printf("errr\n");
     }
+    */
    
     if (close(client_socket)==-1){
        perror("close error");
