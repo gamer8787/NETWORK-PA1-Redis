@@ -53,8 +53,10 @@ int main(int argc, char *argv[])
     char dollar[2]="$";
     char star[2]="*";
     while(fgets(command,sizeof(command),stdin)!=NULL){
-        if(strncmp(command,"PING",4)==0){
-            if(strncmp(command+4,"                        ",strlen(command)-4)==0){
+        if (command[strlen(command)-1]=='\n')
+            command[strlen(command)-1]='\0';
+        if(strncmp(command,"PING ",(strlen(command)) <5 ? 4 : 5)==0){
+            if(strncmp(command+4,"                                       ",strlen(command)-4)==0){
                 char str_len[10]="";
                 strcat(send,star);
                 strcat(send,"1");
@@ -66,19 +68,47 @@ int main(int argc, char *argv[])
                 strcat(send,command);
                 strcat(send,rn);
             }
-            else{
+            else{ //나중에 ""랑 띄어쓰기 2개 초과일 때 생각해야됨
                 char str_len[10]="";
                 strcat(send,star);
-                strcat(send,"1");
+                strcat(send,"2");
                 strcat(send,rn);
                 strcat(send,dollar);
-                sprintf(str_len, "%ld",strlen(command)); 
+                strcat(send,"4");
+                strcat(send,rn);
+                strcat(send,"PING");
+                strcat(send,rn);
+                strcat(send,dollar);
+                sprintf(str_len, "%ld",strlen(command)-5); 
                 strcat(send,str_len);
                 strcat(send,rn);
-                strcat(send,command);
+                strcat(send,command+5);
                 strcat(send,rn);
             }
         }
+        
+        else if(strncmp(command,"GET ",4)==0){
+            ;
+        }
+        /*
+        else if(strncmp(command,"SET ",4)==0){
+            ;
+        }
+        else if(strncmp(command,"STRLEN ",3)==0){
+            ;
+        }
+        else if(strncmp(command,"DEL ",3)==0){
+            ;
+        }
+        else if(strncmp(command,"EXISTS ",3)==0){
+            ;
+        }
+        */
+        else{
+            printf("else not yet\n");
+            exit(1);
+        }
+        break;
     }
     /*
     for(int i=0;i<strlen(send);i++){
@@ -87,8 +117,8 @@ int main(int argc, char *argv[])
     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    char send_test4[1000]="*2\r\n$4\r\nPING\r\n$5\r\nhello\r\n\n*1\r\n$4\r\nPING\r\n\n*2\r\n$4\r\nPING\r\n$10\r\nhelloworld\r\n";
-    if (write(client_socket,&send_test4,sizeof(send_test4))==-1){
+    //char send_test4[1000]="*2\r\n$4\r\nPING\r\n$5\r\nhello\r\n\n*1\r\n$4\r\nPING\r\n\n*2\r\n$4\r\nPING\r\n$10\r\nhelloworld\r\n";
+    if (write(client_socket,&send,sizeof(send))==-1){
         perror("write error");
         exit(1);
     }
@@ -98,14 +128,14 @@ int main(int argc, char *argv[])
         perror("read error");
         exit(1);
     }
-    printf("message1111 is %s\n",read_message);
+    //printf("%s\n",read_message);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     char *divide = strtok(read_message,"\r");
     switch(*read_message){
         case '+':
-            //printf("%s\n",divide+1);
+            printf("%s\n",divide+1);
             divide = strtok(NULL,"\r");
         case '-':
             break;
@@ -113,7 +143,7 @@ int main(int argc, char *argv[])
             break;
         case '$':
             divide = strtok(NULL,"\r");
-            //printf("%s\n",divide+1);
+            printf("%s\n",divide+1);
         case '*':
             break;
         default :    
