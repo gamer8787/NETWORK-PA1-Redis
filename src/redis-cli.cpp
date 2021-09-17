@@ -7,7 +7,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-int index(char * str, char c);
+
+void backslash_n( char* backslash );
+
 int main(int argc, char *argv[])
 {
     struct hostent* host;
@@ -52,116 +54,143 @@ int main(int argc, char *argv[])
     char command[1024];
     char dollar[2]="$";
     char star[2]="*";
-    while(fgets(command,sizeof(command),stdin)!=NULL){
+    int num_command=0;
+    while(fgets(command,sizeof(command),stdin)) {
+        char one_line[1024]="";
+        char copy[1024];
+        strcpy(copy, command);
         if (command[strlen(command)-1]=='\n')
             command[strlen(command)-1]='\0';
-        if(strncmp(command,"PING ",(strlen(command)) <5 ? 4 : 5)==0){
-            strcat(send,command); //modify later
-            strcat(send,rn); 
-            /*
-            if(strncmp(command+4,"                                       ",strlen(command)-4)==0){
-                char str_len[10]="";
-                strcat(send,star);
-                strcat(send,"1");
-                strcat(send,rn);
-                strcat(send,dollar);
-                sprintf(str_len, "%ld",strlen(command)); 
-                strcat(send,str_len);
-                strcat(send,rn);
-                strcat(send,command);
-                strcat(send,rn);
-            }
-            else{ //나중에 ""랑 띄어쓰기 2개 초과일 때 생각해야됨
-                char str_len[10]="";
-                strcat(send,star);
-                strcat(send,"2");
-                strcat(send,rn);
-                strcat(send,dollar);
-                strcat(send,"4");
-                strcat(send,rn);
-                strcat(send,"PING");
-                strcat(send,rn);
-                strcat(send,dollar);
-                sprintf(str_len, "%ld",strlen(command)-5); 
-                strcat(send,str_len);
-                strcat(send,rn);
-                strcat(send,command+5);
-                strcat(send,rn);
-            }
-            */
-        }
-        else if(strncmp(command,"GET ",4)==0){
+        if (strstr(command,"\"")!=NULL){
+            char *quote =strtok(copy,"\"");
+            quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
-            exit(1);
-            ;
+            int num_bulk = 0; 
+            char maker[1000]="";
+            while(bulk!=NULL){
+                char len_bulk[10]="";
+                strcat(maker,dollar);
+                sprintf(len_bulk,"%ld",strlen(bulk));
+                strcat(maker,len_bulk);
+                strcat(maker,rn);
+                strcat(maker,bulk);
+                strcat(maker,rn);
+                num_bulk+=1;
+                if ( (bulk+strlen(bulk)+2) == quote-copy+command){ // 확실하지 않음
+                    bulk = strtok(NULL,"\"");
+                    char *slash = strstr(bulk,"\\");
+                    if(slash!=NULL){
+                        backslash_n(slash);
+                    }
+                }
+                else{
+                bulk = strtok(NULL," ");
+                }
+            }
+
+            char char_num_bulk[10]="";
+            sprintf(char_num_bulk,"%d",num_bulk);
+            strcat(one_line,star);
+            strcat(one_line,char_num_bulk);
+            strcat(one_line,rn);
+            strcat(one_line,maker);
+
         }
-        /*
-        else if(strncmp(command,"SET ",4)==0){
-            ;
-        }
-        else if(strncmp(command,"STRLEN ",3)==0){
-            ;
-        }
-        else if(strncmp(command,"DEL ",3)==0){
-            ;
-        }
-        else if(strncmp(command,"EXISTS ",3)==0){
-            ;
-        }
-        */
+
         else{
-            printf("else not yet\n");
-            exit(1);
+            char *quote =strtok(command,"\"");
+            quote =strtok(NULL,"\"");
+            char *bulk = strtok(command," ");
+            int num_bulk = 0; 
+            char maker[1000]="";
+            while(bulk!=NULL){
+                char len_bulk[10]="";
+                strcat(maker,dollar);
+                sprintf(len_bulk,"%ld",strlen(bulk));
+                strcat(maker,len_bulk);
+                strcat(maker,rn);
+                strcat(maker,bulk);
+                strcat(maker,rn);
+                num_bulk+=1;
+                bulk = strtok(NULL," ");
+            }
+
+            char char_num_bulk[10]="";
+            sprintf(char_num_bulk,"%d",num_bulk);
+            strcat(one_line,star);
+            strcat(one_line,char_num_bulk);
+            strcat(one_line,rn);
+            strcat(one_line,maker);
+
         }
-        break;
+        strcat(send,one_line);
+        strcat(send,"\r\n");
+        num_command+=1;
     }
-    /*
-    for(int i=0;i<strlen(send);i++){
-        printf("send char : %d\n", *(send+i));
-    }
-    */
+    
+    //printf("send is\n%s\n", send);
+    //printf("length is %ld\n", strlen(send));
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    char send_test1[1000]="*3\r\n$3\r\nSET\r\n$5\r\nmykey\r\n$8\r\nhello hi\r\n";
-    char n[2]="\n";
-    char send_test2[1000]="*2\r\n$3\r\nGET\r\n$5\r\nmykey\r\n";
-    strcat(send_test1,n);
-    strcat(send_test1,send_test2);
+    
+    char send_test1[1000]="*3\r\n$3\r\nSET\r\n$3\r\nfoo\r\n$5\r\nfkyou\r\n";      
 
-    if (write(client_socket,&send_test1,sizeof(send_test1))==-1){
+
+    if (write(client_socket,&send,sizeof(send))==-1){
         perror("write error");
+        close(client_socket);
         exit(1);
     }
 
-    char read_message[1024];  
-    if (read(client_socket,&read_message,1024)==-1){
+    char read_message[10000];  
+    char read_message2[10000];  
+     
+    memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 되는데 왜?
+    memset(&read_message2, 0, sizeof(read_message2));
+    if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
         perror("read error");
+        close(client_socket);
         exit(1);
     }
-    printf("read_message is %s\n",read_message);
+
+    //printf("read_message is \n%s\n",read_message);
+    //printf("length is %ld\n",strlen(read_message));
+
+
+    //printf("lenght read is %ld\n\n\n\n",strlen(read_message));
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     char *divide = strtok(read_message,"\r");
-    /*
-    switch(*read_message){
-        case '+':
-            printf("%s\n",divide+1);
-            divide = strtok(NULL,"\r");
-        case '-':
-            break;
-        case ':':
-            break;
-        case '$':
-            divide = strtok(NULL,"\r");
-            printf("%s\n",divide+1);
-        case '*':
-            break;
-        default :    
-            printf("errr\n");
+    for(int i=0;i<num_command;i++){
+        switch(*divide){
+            case '+':
+                printf("%s\n",divide+1);
+                divide = strtok(NULL,"\r");
+                divide+=1;
+            case '-':
+                break;
+            case ':':
+                printf("%s\n",divide+1);
+                divide = strtok(NULL,"\r");
+                divide+=1;
+                break;
+            case '$':
+                if( strncmp(divide+1,"-",1)==0){
+                    printf("\n");
+                    break;
+                }
+                divide = strtok(NULL,"\r");
+                printf("%s\n",divide+1);
+            case '*':
+                break;
+            default :    
+                printf("errr\n");
+                break;
+        }
     }
-    */
-   
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if (close(client_socket)==-1){
        perror("close error");
        exit(1);
@@ -169,12 +198,21 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int index(char * str, char c){
-    for(int i=0;i<strlen(str);i++){
-        if (*(str+i) == c ){
-            return i;
-        }
+void backslash_n( char* backslash ) {
+    if( strncmp(backslash, "\\n",2) ==0){
+        *backslash='\n';
     }
-    return 0;
+    else{
+        perror("error not a \\n \n");
+        exit(1);
+    }
+
+    backslash++;
+    for(;*backslash!='\0';backslash++){
+        *backslash=*(backslash+1);
+    }
+    *backslash='\0';
 }
+
 //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
+
