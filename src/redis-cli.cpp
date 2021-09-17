@@ -49,15 +49,15 @@ int main(int argc, char *argv[])
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // make resp form
-    char send[1024]="";
+    char send[1000000]="";
     char rn[5]="\r\n";
-    char command[1024];
+    char command[1000000];
     char dollar[2]="$";
     char star[2]="*";
     int num_command=0;
     while(fgets(command,sizeof(command),stdin)) {
-        char one_line[1024]="";
-        char copy[1024];
+        char one_line[1000000]="";
+        char copy[1000000];
         strcpy(copy, command);
         if (command[strlen(command)-1]=='\n')
             command[strlen(command)-1]='\0';
@@ -66,9 +66,9 @@ int main(int argc, char *argv[])
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[1000]="";
+            char maker[1000000]="";
             while(bulk!=NULL){
-                char len_bulk[10]="";
+                char len_bulk[100]="";
                 strcat(maker,dollar);
                 sprintf(len_bulk,"%ld",strlen(bulk));
                 strcat(maker,len_bulk);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            char char_num_bulk[10]="";
+            char char_num_bulk[100]="";
             sprintf(char_num_bulk,"%d",num_bulk);
             strcat(one_line,star);
             strcat(one_line,char_num_bulk);
@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[1000]="";
+            char maker[1000000]="";
             while(bulk!=NULL){
-                char len_bulk[10]="";
+                char len_bulk[100]="";
                 strcat(maker,dollar);
                 sprintf(len_bulk,"%ld",strlen(bulk));
                 strcat(maker,len_bulk);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
                 bulk = strtok(NULL," ");
             }
 
-            char char_num_bulk[10]="";
+            char char_num_bulk[100]="";
             sprintf(char_num_bulk,"%d",num_bulk);
             strcat(one_line,star);
             strcat(one_line,char_num_bulk);
@@ -127,7 +127,6 @@ int main(int argc, char *argv[])
         strcat(send,"\r\n");
         num_command+=1;
     }
-    
     //printf("send is\n%s\n", send);
     //printf("length is %ld\n", strlen(send));
 
@@ -143,11 +142,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    char read_message[10000];  
-    char read_message2[10000];  
+    char read_message[1000000];  
      
     memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 되는데 왜?
-    memset(&read_message2, 0, sizeof(read_message2));
     if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
         perror("read error");
         close(client_socket);
@@ -158,12 +155,11 @@ int main(int argc, char *argv[])
     //printf("length is %ld\n",strlen(read_message));
 
 
-    //printf("lenght read is %ld\n\n\n\n",strlen(read_message));
-
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     char *divide = strtok(read_message,"\r");
     for(int i=0;i<num_command;i++){
+        //printf("divide is %c and %p\n",*divide, divide);
         switch(*divide){
             case '+':
                 printf("%s\n",divide+1);
@@ -177,12 +173,17 @@ int main(int argc, char *argv[])
                 divide+=1;
                 break;
             case '$':
-                if( strncmp(divide+1,"-",1)==0){
-                    printf("\n");
+                if( strncmp(divide+1,"-",1)==0){ ///null관련
+                    printf("\0");   /////
+                    printf("\n");   /////
+                    divide = strtok(NULL,"\r");
+                    divide+=1;
                     break;
                 }
                 divide = strtok(NULL,"\r");
                 printf("%s\n",divide+1);
+                divide = strtok(NULL,"\r"); //최근에 바꿈
+                divide+=1;
             case '*':
                 break;
             default :    
@@ -190,6 +191,7 @@ int main(int argc, char *argv[])
                 break;
         }
     }
+    //printf("addres is %p\n",read_message+strlen(read_message));
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if (close(client_socket)==-1){
        perror("close error");
