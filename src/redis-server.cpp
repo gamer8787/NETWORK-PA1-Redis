@@ -9,7 +9,12 @@
 #include <string.h>
 int main(int argc, char *argv[])
 {
-    
+    /*
+    char command[]="";
+    while(fgets(command,sizeof(command),stdin)!=NULL){
+        printf("command is %s\n",command);
+    }
+    */
     int client_socket;
     int server_socket;
 
@@ -35,7 +40,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    if(listen(server_socket, 100) == -1){
+    if(listen(server_socket, 5) == -1){
         perror("Listening Error");
         close(server_socket);
         exit(1);
@@ -48,25 +53,27 @@ int main(int argc, char *argv[])
         close(server_socket);
         exit(1);
     }
-
-    char read_message[1000000];  
-    memset(&read_message, 0, sizeof(read_message)); //
-
-    if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
+    //printf("1\n");
+    char recv[1000];  
+    memset(recv, 0, sizeof(recv)); //
+    if (read(client_socket,recv,sizeof(recv))==-1){ //size -1?
         perror("read error");
         close(server_socket);
         exit(1);
     }
 
-    char send[] = "+pong\r\n";
-    if (write(client_socket,&send,sizeof(send))==-1){
+    char send[50]="";
+    //memset(recv, 0, sizeof(recv));
+    strcat(send,"+pong");
+    if (write(client_socket,send,sizeof(send)-1)==-1){
         perror("write error");
         close(server_socket);
-        exit(1);
-    }
-
+        exit(1); 
+        }
     close(client_socket);
     close(server_socket);
 
     return 0;
 }
+
+//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

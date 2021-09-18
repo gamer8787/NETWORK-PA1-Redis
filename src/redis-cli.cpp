@@ -60,15 +60,15 @@ int main(int argc, char *argv[])
         //printf("send is\n%s\n", send);
         //printf("length is %ld\n", strlen(send));      
 
-        if (write(client_socket,&send,sizeof(send))==-1){
+        if (write(client_socket,send,sizeof(send))==-1){
             perror("write error");
             close(client_socket);
             exit(1);
         }
 
         char read_message[1000000];  
-        memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
-        if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
+        memset(read_message, 0, sizeof(read_message)); //이거 해줘야 함
+        if (read(client_socket,read_message,sizeof(read_message))==-1){ //size -1?
             perror("read error");
             close(client_socket);
             exit(1);
