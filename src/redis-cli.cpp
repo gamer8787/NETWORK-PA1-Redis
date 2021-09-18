@@ -9,7 +9,7 @@
 #include <string.h>
 
 void backslash_n( char* backslash );
-void make_resp_form(char * send, int *num_command);
+char* make_resp_form(char * send,char * end, int *num_command);
 void printf_read_message(char *read_message,int num_command);
 int main(int argc, char *argv[])
 {
@@ -37,79 +37,51 @@ int main(int argc, char *argv[])
     }
     /////////////////////////////////////////////////////////////////
 
+    char* end="default at first time";
+    while(end!=NULL){
+        
+    //for(int i=0;i<100;i++){
+        client_socket = socket(PF_INET,SOCK_STREAM,0);
+        if(client_socket == -1){
+            perror("socekt_error") ;
+            exit(1);
+        } 
 
-    client_socket = socket(PF_INET,SOCK_STREAM,0);
-    if(client_socket == -1){
-        perror("socekt_error") ;
+        if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
+            close(client_socket);
+            perror("connect error");
+            exit(1);
+        }
+        char send[1000000]="";
+        int num_command=0;
+
+        end = make_resp_form( send, end, &num_command);
+
+        //printf("send is\n%s\n", send);
+        //printf("length is %ld\n", strlen(send));      
+
+        if (write(client_socket,&send,sizeof(send))==-1){
+            perror("write error");
+            close(client_socket);
+            exit(1);
+        }
+
+        char read_message[1000000];  
+        memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
+        if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
+            perror("read error");
+            close(client_socket);
+            exit(1);
+        }
+
+        //printf("read_message is \n%s\n",read_message);
+        //printf("length is %ld\n",strlen(read_message));
+        printf_read_message(read_message,num_command);
+
+        if (close(client_socket)==-1){
+        perror("close error");
         exit(1);
-    } 
-
-    if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
-        close(client_socket);
-        perror("connect error");
-        exit(1);
-    }
-    char send[1000000]="";
-    int num_command=0;
-
-    make_resp_form( send, &num_command);
-
-    //printf("send is\n%s\n", send);
-    //printf("length is %ld\n", strlen(send));      
-
-    if (write(client_socket,&send,sizeof(send))==-1){
-        perror("write error");
-        close(client_socket);
-        exit(1);
-    }
-
-    char read_message[1000000];  
-    memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 되는데 왜?
-    if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
-        perror("read error");
-        close(client_socket);
-        exit(1);
-    }
-
-    //printf("read_message is \n%s\n",read_message);
-    //printf("length is %ld\n",strlen(read_message));
-    printf_read_message(read_message,num_command);
-
-    if (close(client_socket)==-1){
-       perror("close error");
-       exit(1);
-    }
-
-    client_socket = socket(PF_INET,SOCK_STREAM,0);
-    if(client_socket == -1){
-        perror("socekt_error") ;
-        exit(1);
-    }
-
-    if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
-        close(client_socket);
-        perror("connect error");
-        exit(1);
-    }
-    char send_test1[1000]="*2\r\n$4\r\nPING\r\n$5\r\nhello\r\n";
-    if (write(client_socket,&send_test1,sizeof(send_test1))==-1){
-        perror("write error");
-        close(client_socket);
-        exit(1);
-    }
-
-    char read_message2[1000000];  
-    memset(&read_message2, 0, sizeof(read_message2)); //이거 해줘야 되는데 왜?
-    if (read(client_socket,&read_message2,sizeof(read_message2)-1)==-1){ //size -1?
-        perror("read error");
-        close(client_socket);
-        exit(1);
-    }
-    printf("read 2 is %s\n", read_message2);
-
-    if (close(client_socket)==-1){
-       perror("close error");
-       exit(1);
+        }
     }
     return 0;
 }
@@ -133,12 +105,14 @@ void backslash_n( char* backslash ) {
     *backslash='\0';
 }
 
-void make_resp_form(char * send, int *num_command){
+char* make_resp_form(char * send,char * end, int *num_command){
     char rn[5]="\r\n";
     char command[1000000];
     char dollar[2]="$";
     char star[2]="*";
-    while(fgets(command,sizeof(command),stdin)) {
+    if (strncmp(end,"default at first time",sizeof("default at first time"))==0)
+        end=fgets(command,sizeof(command),stdin);
+    while(end!=NULL && *num_command!=100) {
         char one_line[1000000]="";
         char copy[1000000];
         strcpy(copy, command);
@@ -209,7 +183,9 @@ void make_resp_form(char * send, int *num_command){
         strcat(send,one_line);
         strcat(send,"\r\n");
         *num_command+=1;
+        end=fgets(command,sizeof(command),stdin);
     }
+    return end;
 }
 
 
