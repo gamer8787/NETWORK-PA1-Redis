@@ -9,18 +9,15 @@
 #include <string.h>
 
 void backslash_n( char* backslash );
-
+void make_resp_form(char * send, int *num_command);
+void printf_read_message(char *read_message,int num_command);
 int main(int argc, char *argv[])
 {
     struct hostent* host;
     struct sockaddr_in server;
     int client_socket;
   
-    client_socket = socket(PF_INET,SOCK_STREAM,0);
-    if(client_socket == -1){
-        perror("socekt_error") ;
-        exit(1);
-    } 
+    
     if(strlen(argv[3]) > 20){ // ALL TEST
         if((host = gethostbyname(argv[3])) == NULL){
             perror("connect error");
@@ -38,23 +35,109 @@ int main(int argc, char *argv[])
         server.sin_addr.s_addr = inet_addr(argv[2]);
         server.sin_port = htons(6379);
     }
+    /////////////////////////////////////////////////////////////////
+
+
+    client_socket = socket(PF_INET,SOCK_STREAM,0);
+    if(client_socket == -1){
+        perror("socekt_error") ;
+        exit(1);
+    } 
 
     if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
         close(client_socket);
         perror("connect error");
         exit(1);
     }
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // make resp form
     char send[1000000]="";
+    int num_command=0;
+
+    make_resp_form( send, &num_command);
+
+    //printf("send is\n%s\n", send);
+    //printf("length is %ld\n", strlen(send));      
+
+    if (write(client_socket,&send,sizeof(send))==-1){
+        perror("write error");
+        close(client_socket);
+        exit(1);
+    }
+
+    char read_message[1000000];  
+    memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 되는데 왜?
+    if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
+        perror("read error");
+        close(client_socket);
+        exit(1);
+    }
+
+    //printf("read_message is \n%s\n",read_message);
+    //printf("length is %ld\n",strlen(read_message));
+    printf_read_message(read_message,num_command);
+
+    if (close(client_socket)==-1){
+       perror("close error");
+       exit(1);
+    }
+
+    client_socket = socket(PF_INET,SOCK_STREAM,0);
+    if(client_socket == -1){
+        perror("socekt_error") ;
+        exit(1);
+    }
+
+    if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
+        close(client_socket);
+        perror("connect error");
+        exit(1);
+    }
+    char send_test1[1000]="*2\r\n$4\r\nPING\r\n$5\r\nhello\r\n";
+    if (write(client_socket,&send_test1,sizeof(send_test1))==-1){
+        perror("write error");
+        close(client_socket);
+        exit(1);
+    }
+
+    char read_message2[1000000];  
+    memset(&read_message2, 0, sizeof(read_message2)); //이거 해줘야 되는데 왜?
+    if (read(client_socket,&read_message2,sizeof(read_message2)-1)==-1){ //size -1?
+        perror("read error");
+        close(client_socket);
+        exit(1);
+    }
+    printf("read 2 is %s\n", read_message2);
+
+    if (close(client_socket)==-1){
+       perror("close error");
+       exit(1);
+    }
+    return 0;
+}
+
+
+
+
+void backslash_n( char* backslash ) {
+    if( strncmp(backslash, "\\n",2) ==0){
+        *backslash='\n';
+    }
+    else{
+        perror("error not a \\n \n");
+        exit(1);
+    }
+
+    backslash++;
+    for(;*backslash!='\0';backslash++){
+        *backslash=*(backslash+1);
+    }
+    *backslash='\0';
+}
+
+void make_resp_form(char * send, int *num_command){
     char rn[5]="\r\n";
     char command[1000000];
     char dollar[2]="$";
     char star[2]="*";
-    int num_command=0;
     while(fgets(command,sizeof(command),stdin)) {
         char one_line[1000000]="";
         char copy[1000000];
@@ -125,38 +208,12 @@ int main(int argc, char *argv[])
         }
         strcat(send,one_line);
         strcat(send,"\r\n");
-        num_command+=1;
+        *num_command+=1;
     }
-    //printf("send is\n%s\n", send);
-    //printf("length is %ld\n", strlen(send));
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    
-    char send_test1[1000]="*3\r\n$3\r\nSET\r\n$3\r\nfoo\r\n$5\r\nfkyou\r\n";      
+}
 
 
-    if (write(client_socket,&send,sizeof(send))==-1){
-        perror("write error");
-        close(client_socket);
-        exit(1);
-    }
-
-    char read_message[1000000];  
-     
-    memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 되는데 왜?
-    if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
-        perror("read error");
-        close(client_socket);
-        exit(1);
-    }
-
-    //printf("read_message is \n%s\n",read_message);
-    //printf("length is %ld\n",strlen(read_message));
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+void printf_read_message(char *read_message,int num_command){
     char *divide = strtok(read_message,"\r");
     for(int i=0;i<num_command;i++){
         //printf("divide is %c and %p\n",*divide, divide);
@@ -191,30 +248,7 @@ int main(int argc, char *argv[])
                 break;
         }
     }
-    //printf("addres is %p\n",read_message+strlen(read_message));
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    if (close(client_socket)==-1){
-       perror("close error");
-       exit(1);
-   }
-    return 0;
 }
 
-void backslash_n( char* backslash ) {
-    if( strncmp(backslash, "\\n",2) ==0){
-        *backslash='\n';
-    }
-    else{
-        perror("error not a \\n \n");
-        exit(1);
-    }
-
-    backslash++;
-    for(;*backslash!='\0';backslash++){
-        *backslash=*(backslash+1);
-    }
-    *backslash='\0';
-}
 
 //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
-
