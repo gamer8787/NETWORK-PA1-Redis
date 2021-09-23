@@ -17,7 +17,6 @@ int main(int argc, char *argv[])
     struct sockaddr_in server;
     int client_socket;
   
-    
     if(strlen(argv[3]) > 20){ // ALL TEST
         if((host = gethostbyname(argv[3])) == NULL){
             perror("connect error");
@@ -37,55 +36,58 @@ int main(int argc, char *argv[])
     }
     /////////////////////////////////////////////////////////////////
 
-    client_socket = socket(PF_INET,SOCK_STREAM,0);
-    if(client_socket == -1){
-        perror("socekt_error") ;
-        exit(1);
-    } 
+    char* end="default at first time";
+    //printf("before while\n");
+    while(end!=NULL){
+        
+    //for(int i=0;i<100;i++){
+        client_socket = socket(PF_INET,SOCK_STREAM,0);
+        if(client_socket == -1){
+            perror("socekt_error") ;
+            exit(1);
+        } 
 
-    if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
-        close(client_socket);
-        perror("connect error");
-        exit(1);
-    }
-    char send[1000000]="*1\r\n$7\r\nCOMMAND\r\n";
-    if (write(client_socket,send,sizeof(send))==-1){
-        perror("write error");
-        close(client_socket);
-        exit(1);
-    }
+        if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
+            close(client_socket);
+            perror("connect error");
+            exit(1);
+        }
+        char send[20000]="";
+        memset(send,0,sizeof(send)); //
+        int num_command=0;
 
-    char read_message[10000];  
-    memset(read_message, 0, sizeof(read_message)); //이거 해줘야 함
-    if (read(client_socket,read_message,sizeof(read_message))==-1){ //size -1?
-        perror("read error");
-        close(client_socket);
-        exit(1);
-    }
+        end = make_resp_form( send, end, &num_command);
 
-    char send2[1000000]="*1\r\n$4\r\nping\r\n";
-    if (write(client_socket,send2,sizeof(send2))==-1){
-        perror("write error");
-        close(client_socket);
-        exit(1);
-    }
+        //printf("send is\n%s\n", send);
+        //printf("length is %ld\n", strlen(send));      
+        //printf("before write\n");
+        if (write(client_socket,&send,strlen(send))==-1){
+            perror("write error");
+            close(client_socket);
+            exit(1);
+        }
+        //printf("before read\n");
+        char read_message[20000];  
+        memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
+        if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
+            perror("read error");
+            close(client_socket);
+            exit(1);
+        }
 
-    char read_message2[10000];  
-    memset(read_message, 0, sizeof(read_message2)); //이거 해줘야 함
-    if (read(client_socket,read_message2,sizeof(read_message2))==-1){ //size -1?
-        perror("read error");
-        close(client_socket);
-        exit(1);
-    }
+        //printf("read_message is \n%s\n",read_message);
+        //printf("length is %ld\n",strlen(read_message));
+        printf_read_message(read_message,num_command);
 
-    printf("read2 is %s\n",read_message2);
-    if (close(client_socket)==-1){
-    perror("close error");
-    exit(1);
+        if (close(client_socket)==-1){
+        perror("close error");
+        exit(1);
+        }
     }
-    
     return 0;
 }
+
+
 
 
 void backslash_n( char* backslash ) {
@@ -106,14 +108,17 @@ void backslash_n( char* backslash ) {
 
 char* make_resp_form(char * send,char * end, int *num_command){
     char rn[5]="\r\n";
-    char command[1000000];
+    char command[20000];
+    //memset(command,0,sizeof(command));
     char dollar[2]="$";
     char star[2]="*";
     if (strncmp(end,"default at first time",sizeof("default at first time"))==0)
         end=fgets(command,sizeof(command),stdin);
-    while(end!=NULL && *num_command!=100) {
-        char one_line[1000000]="";
-        char copy[1000000];
+    while(end!=NULL && *num_command!=1) {
+        char one_line[20000]="";
+        memset(one_line,0,sizeof(one_line));
+        char copy[20000];
+        memset(copy,0,sizeof(copy));
         strcpy(copy, command);
         if (command[strlen(command)-1]=='\n')
             command[strlen(command)-1]='\0';
@@ -122,9 +127,11 @@ char* make_resp_form(char * send,char * end, int *num_command){
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[1000000]="";
+            char maker[20000]="";
+            memset(maker,0,sizeof(maker));
             while(bulk!=NULL){
                 char len_bulk[100]="";
+                memset(len_bulk,0,sizeof(len_bulk));
                 strcat(maker,dollar);
                 sprintf(len_bulk,"%ld",strlen(bulk));
                 strcat(maker,len_bulk);
@@ -145,6 +152,7 @@ char* make_resp_form(char * send,char * end, int *num_command){
             }
 
             char char_num_bulk[100]="";
+            memset(char_num_bulk,0,sizeof(char_num_bulk));
             sprintf(char_num_bulk,"%d",num_bulk);
             strcat(one_line,star);
             strcat(one_line,char_num_bulk);
@@ -158,9 +166,11 @@ char* make_resp_form(char * send,char * end, int *num_command){
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[1000000]="";
+            char maker[20000]="";
+            memset(maker,0,sizeof(maker));
             while(bulk!=NULL){
                 char len_bulk[100]="";
+                memset(len_bulk,0,sizeof(len_bulk));
                 strcat(maker,dollar);
                 sprintf(len_bulk,"%ld",strlen(bulk));
                 strcat(maker,len_bulk);
@@ -172,6 +182,7 @@ char* make_resp_form(char * send,char * end, int *num_command){
             }
 
             char char_num_bulk[100]="";
+            memset(char_num_bulk,0,sizeof(char_num_bulk));
             sprintf(char_num_bulk,"%d",num_bulk);
             strcat(one_line,star);
             strcat(one_line,char_num_bulk);
@@ -224,5 +235,3 @@ void printf_read_message(char *read_message,int num_command){
         }
     }
 }
-
-//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
