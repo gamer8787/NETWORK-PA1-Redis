@@ -8,9 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-void backslash_n( char* backslash );
-char* make_resp_form(char * send,char * end, int *num_command);
-void printf_read_message(char *read_message,int num_command);
+#define MAX_BUFFER 20000
+
 int main(int argc, char *argv[])
 {
     struct hostent* host;
@@ -52,7 +51,7 @@ int main(int argc, char *argv[])
             perror("connect error");
             exit(1);
         }
-        char send[20000]="";
+        char send[MAX_BUFFER]="";
         memset(send,0,sizeof(send)); //
         int num_command=0;
 
@@ -67,7 +66,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
         //printf("before read\n");
-        char read_message[20000];  
+        char read_message[MAX_BUFFER];  
         memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
         if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
             perror("read error");
@@ -108,16 +107,16 @@ void backslash_n( char* backslash ) {
 
 char* make_resp_form(char * send,char * end, int *num_command){
     char rn[5]="\r\n";
-    char command[20000];
-    //memset(command,0,sizeof(command));
+    char command[MAX_BUFFER];
+    memset(command,0,sizeof(command));
     char dollar[2]="$";
     char star[2]="*";
     if (strncmp(end,"default at first time",sizeof("default at first time"))==0)
         end=fgets(command,sizeof(command),stdin);
     while(end!=NULL && *num_command!=1) {
-        char one_line[20000]="";
+        char one_line[MAX_BUFFER]="";
         memset(one_line,0,sizeof(one_line));
-        char copy[20000];
+        char copy[MAX_BUFFER];
         memset(copy,0,sizeof(copy));
         strcpy(copy, command);
         if (command[strlen(command)-1]=='\n')
@@ -127,7 +126,7 @@ char* make_resp_form(char * send,char * end, int *num_command){
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[20000]="";
+            char maker[MAX_BUFFER]="";
             memset(maker,0,sizeof(maker));
             while(bulk!=NULL){
                 char len_bulk[100]="";
@@ -166,7 +165,7 @@ char* make_resp_form(char * send,char * end, int *num_command){
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[20000]="";
+            char maker[MAX_BUFFER]="";
             memset(maker,0,sizeof(maker));
             while(bulk!=NULL){
                 char len_bulk[100]="";
@@ -208,7 +207,11 @@ void printf_read_message(char *read_message,int num_command){
                 printf("%s\n",divide+1);
                 divide = strtok(NULL,"\r");
                 divide+=1;
+                break;
             case '-':
+                printf("%s\n",divide+1);
+                divide = strtok(NULL,"\r");
+                divide+=1;
                 break;
             case ':':
                 printf("%s\n",divide+1);
@@ -227,10 +230,11 @@ void printf_read_message(char *read_message,int num_command){
                 printf("%s\n",divide+1);
                 divide = strtok(NULL,"\r"); //최근에 바꿈
                 divide+=1;
+                break;
             case '*':
                 break;
             default :    
-                printf("errr\n");
+                printf("ERR\n");
                 break;
         }
     }
