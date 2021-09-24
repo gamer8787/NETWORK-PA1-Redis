@@ -36,10 +36,7 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////
 
     char* end="default at first time";
-    //printf("before while\n");
     while(end!=NULL){
-        
-    //for(int i=0;i<100;i++){
         client_socket = socket(PF_INET,SOCK_STREAM,0);
         if(client_socket == -1){
             perror("socekt_error") ;
@@ -57,15 +54,11 @@ int main(int argc, char *argv[])
 
         end = make_resp_form( send, end, &num_command);
 
-        //printf("send is\n%s\n", send);
-        //printf("length is %ld\n", strlen(send));      
-        //printf("before write\n");
         if (write(client_socket,&send,strlen(send))==-1){
             perror("write error");
             close(client_socket);
             exit(1);
         }
-        //printf("before read\n");
         char read_message[MAX_BUFFER];  
         memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
         if (read(client_socket,&read_message,sizeof(read_message)-1)==-1){ //size -1?
@@ -74,8 +67,6 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-        //printf("read_message is \n%s\n",read_message);
-        //printf("length is %ld\n",strlen(read_message));
         printf_read_message(read_message,num_command);
 
         if (close(client_socket)==-1){
@@ -108,7 +99,7 @@ void backslash_n( char* backslash ) {
 char* make_resp_form(char * send,char * end, int *num_command){
     char rn[5]="\r\n";
     char command[MAX_BUFFER];
-    memset(command,0,sizeof(command));
+    //memset(command,0,sizeof(command)); //하면 안됨
     char dollar[2]="$";
     char star[2]="*";
     if (strncmp(end,"default at first time",sizeof("default at first time"))==0)
@@ -201,7 +192,6 @@ char* make_resp_form(char * send,char * end, int *num_command){
 void printf_read_message(char *read_message,int num_command){
     char *divide = strtok(read_message,"\r");
     for(int i=0;i<num_command;i++){
-        //printf("divide is %c and %p\n",*divide, divide);
         switch(*divide){
             case '+':
                 printf("%s\n",divide+1);
@@ -221,6 +211,7 @@ void printf_read_message(char *read_message,int num_command){
             case '$':
                 if( strncmp(divide+1,"-",1)==0){ ///null관련
                     printf("\0");   /////
+                    //printf(" ");      /////
                     printf("\n");   /////
                     divide = strtok(NULL,"\r");
                     divide+=1;
@@ -239,3 +230,4 @@ void printf_read_message(char *read_message,int num_command){
         }
     }
 }
+//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
