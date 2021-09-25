@@ -32,54 +32,8 @@ int main(int argc, char *argv[])
     }
     /////////////////////////////////////////////////////////////////
 
-    char* end="";
+    char* end;
     int first=0;
-    if( 1){ // for large test
-        client_socket = socket(PF_INET,SOCK_STREAM,0);
-        if(client_socket == -1){
-            perror("socekt_error") ;
-            exit(1);
-        } 
-
-        if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) ==-1 ){
-            close(client_socket);
-            perror("connect error");
-            exit(1);
-        }
-        char send[50]="";
-        memset(send,0,sizeof(send)); //
-
-        strcat(send,"*2\r\n$3\r\nget\r\n$3\r\nfoo");
-        //strcat(send,argv[5]); //for local large test
-        strcat(send,"\r\n");
-        //printf("send is %s\n",send);
-        if (write(client_socket,&send,strlen(send))==-1){
-            perror("write error");
-            close(client_socket);
-            exit(1);
-        }
-        char read_message[20000];  
-        memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
-        if (read(client_socket,&read_message,sizeof(read_message))==-1){ //size -1?
-            perror("read error");
-            close(client_socket);
-            exit(1);
-        }
-        char *cnum_bulk=strtok(read_message,"\r");
-        int inum_bulk=atoi(cnum_bulk+1);
-        int length_num=strlen(cnum_bulk);
-        for(int i=0;i<inum_bulk;i++){
-            printf("%c",*(read_message+i+length_num+2));
-        }
-        printf("\n");
-        if (close(client_socket)==-1){
-            perror("close error");
-            exit(1);
-        }
-        return 0;
-    }
-    
-
     while(first!=-1){
         client_socket = socket(PF_INET,SOCK_STREAM,0);
         if(client_socket == -1){
@@ -103,8 +57,6 @@ int main(int argc, char *argv[])
             close(client_socket);
             exit(1);
         }
-
-
         char read_message[20000];  
         memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
         if (read(client_socket,&read_message,sizeof(read_message))==-1){ //size -1?
@@ -112,15 +64,13 @@ int main(int argc, char *argv[])
             close(client_socket);
             exit(1);
         }
-
-        //printf("read_message is \n%s\n",read_message);
+        //printf("read is %s",read_message);
         printf_read_message(read_message,num_command);
 
         if (close(client_socket)==-1){
             perror("close error");
             exit(1);
         }
-
     }
     return 0;
 }
@@ -258,7 +208,7 @@ void printf_read_message(char *read_message,int num_command){
                 divide = strtok(NULL,"\r");
                 divide+=1;
                 break;
-            case '$':
+            case '$':{
                 if( strncmp(divide+1,"-",1)==0){ ///null관련
                     printf("\0");   /////
                     printf("\n");   /////
@@ -266,11 +216,15 @@ void printf_read_message(char *read_message,int num_command){
                     divide+=1;
                     break;
                 }
-                divide = strtok(NULL,"\r");
-                printf("%s\n",divide+1);
-                divide = strtok(NULL,"\r"); //최근에 바꿈
-                divide+=1;
+                int inum_bulk=atoi(divide+1);
+                int length_num=strlen(divide+1);
+                for(int i=0;i<inum_bulk;i++){
+                    printf("%c",*(read_message+i+length_num+3));
+                }
+                printf("\n");
+                divide+=1+length_num+inum_bulk;
                 break;
+            }
             case '*':
                 break;
             default :    
