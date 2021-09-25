@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-
+#define MAX_BUFFER 500
 int main(int argc, char *argv[])
 {
     struct hostent* host;
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
             perror("connect error");
             exit(1);
         }
-        char send[20000]="";
+        char send[MAX_BUFFER]="";
         memset(send,0,sizeof(send)); //
         int num_command=0;
         
@@ -57,16 +57,32 @@ int main(int argc, char *argv[])
             close(client_socket);
             exit(1);
         }
-        char read_message[20000];  
-        memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
-        if (read(client_socket,&read_message,sizeof(read_message))==-1){ //size -1?
-            perror("read error");
-            close(client_socket);
-            exit(1);
+        int mode=1;
+        int i=1;
+        int num_bulk=0;
+        int len_num=0;
+        while(1){
+            char read_message[MAX_BUFFER];  
+            memset(&read_message, 0, sizeof(read_message)); //이거 해줘야 함
+            if (read(client_socket,&read_message,sizeof(read_message))==-1){ //size -1?
+                perror("read error");
+                close(client_socket);
+                exit(1);
+            }
+            if(i==1)
+                ;
+                //printf("read is %s\n\n\n\n\n",read_message);
+             
+            printf_read_message(read_message, num_command, &mode,&num_bulk,&len_num);
+            if(mode!=0)
+                mode=2;//2이면 위 함수에서 다른 것 실행
+            if(i==(num_bulk-1)/MAX_BUFFER)
+                mode=3;
+            if(i==(num_bulk-1)/MAX_BUFFER+1)
+                break;
+            //printf("i is%d\n",i);
+            i++;
         }
-        //printf("read is %s",read_message);
-        printf_read_message(read_message,num_command);
-
         if (close(client_socket)==-1){
             perror("close error");
             exit(1);
@@ -94,7 +110,7 @@ void backslash_n( char* backslash ) {
 
 void make_resp_form(char * send,int *first,char* come, int *num_command){
     char rn[5]="\r\n";
-    char command[20000];
+    char command[MAX_BUFFER];
     //memset(command,0,sizeof(command)); //하면 안됨
     char dollar[2]="$";
     char star[2]="*";
@@ -102,9 +118,9 @@ void make_resp_form(char * send,int *first,char* come, int *num_command){
     if (!*(first))
         end=fgets(command,sizeof(command),stdin);
     while(end!=NULL && *num_command!=1) {
-        char one_line[20000]="";
+        char one_line[MAX_BUFFER]="";
         memset(one_line,0,sizeof(one_line));
-        char copy[20000];
+        char copy[MAX_BUFFER];
         memset(copy,0,sizeof(copy));
         strcpy(copy, command);
         if (command[strlen(command)-1]=='\n')
@@ -114,7 +130,7 @@ void make_resp_form(char * send,int *first,char* come, int *num_command){
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[20000]="";
+            char maker[MAX_BUFFER]="";
             memset(maker,0,sizeof(maker));
             while(bulk!=NULL){
                 char len_bulk[100]="";
@@ -153,7 +169,7 @@ void make_resp_form(char * send,int *first,char* come, int *num_command){
             quote =strtok(NULL,"\"");
             char *bulk = strtok(command," ");
             int num_bulk = 0; 
-            char maker[20000]="";
+            char maker[MAX_BUFFER]="";
             memset(maker,0,sizeof(maker));
             while(bulk!=NULL){
                 char len_bulk[100]="";
@@ -191,25 +207,50 @@ void make_resp_form(char * send,int *first,char* come, int *num_command){
 }
 
 
-void printf_read_message(char *read_message,int num_command){
+void printf_read_message(char *read_message,int num_command, int *mode,int *num_bulk,int *len_num){
     char *divide = strtok(read_message,"\r");
+    
+    if(*mode==2){
+        int i;
+        for(i=0;i<MAX_BUFFER ;i++){ //sizeof or maxsize or max_buffer
+            if(*(read_message+i)=='\x00'){
+                printf("\x0D");
+                continue;
+            }
+            printf("%c",*(read_message+i));
+        }
+        return;
+    }
+    if(*mode==3){
+        int i;
+        for(i=0;i<*num_bulk%MAX_BUFFER+3+*len_num ;i++){ //sizeof or maxsize or max_buffer
+            printf("%c",*(read_message+i));
+        }
+        printf("\n");
+        return;
+    }
     for(int i=0;i<num_command;i++){
         //printf("divide is %c and %p\n",*divide, divide);
         switch(*divide){
             case '+':
+                printf("2222222222\n");
                 printf("%s\n",divide+1);
                 divide = strtok(NULL,"\r");
                 divide+=1;
                 break;
             case '-':
+                printf("333333333\n");
                 break;
             case ':':
+                printf("11111111111\n");
                 printf("%s\n",divide+1);
                 divide = strtok(NULL,"\r");
                 divide+=1;
                 break;
             case '$':{
+                //printf("hi\n");
                 if( strncmp(divide+1,"-",1)==0){ ///null관련
+                    printf("333333333\n");
                     printf("\0");   /////
                     printf("\n");   /////
                     divide = strtok(NULL,"\r");
@@ -218,18 +259,21 @@ void printf_read_message(char *read_message,int num_command){
                 }
                 int inum_bulk=atoi(divide+1);
                 int length_num=strlen(divide+1);
-                for(int i=0;i<inum_bulk;i++){
+                *num_bulk=inum_bulk;
+                *len_num=length_num;
+                for(int i=0;i<MAX_BUFFER-3-length_num;i++){
                     printf("%c",*(read_message+i+length_num+3));
+                    //printf("i is %d",i);
                 }
-                printf("\n");
                 divide+=1+length_num+inum_bulk;
                 break;
             }
             case '*':
+                printf("4444444\n");
                 break;
             default :    
-                printf("errr\n");
-                break;
+                printf("err\n");
+                
         }
     }
 }
