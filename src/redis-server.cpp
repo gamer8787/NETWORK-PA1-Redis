@@ -13,7 +13,7 @@
 #include <string>
 using namespace std;
 
-map<string, string> m;
+map<string, char*> m;
 #define MAX_BUFFER 20000
 int main(int argc, char *argv[])
 {
@@ -78,6 +78,8 @@ int main(int argc, char *argv[])
         char send[MAX_BUFFER]="";
         char length[100]="";
         parse_and_call(send,read,len_bulk);
+        printf("command11 is %s\n",m["foo"]);
+        printf("command_adrres is %x\n",&m["foo"]);
         printf("len bulk is %d\n",*len_bulk);
         printf("send is %s\n",send);
         sprintf(length,"%d",*len_bulk);
@@ -87,7 +89,6 @@ int main(int argc, char *argv[])
                 close(server_socket);
                 exit(1); 
             }
-            printf("%dth here\n",i);
             close(client_socket);
             continue;
         }
@@ -194,14 +195,15 @@ void GET(char **command,int num_bulk,char * send){
 
 void SET(char **command,int num_bulk,char * send){
     m.erase(command[1]);
-    m.insert(pair<string, string>(command[1], command[2]));
+    m.insert(pair<string, char*>(command[1], command[2]));
+    printf("command is %s\n",m[command[1]]);
     strcat(send,"+OK\r\n");
 }
 
 void STRLEN(char **command,int num_bulk,char * send){
     char temp[MAX_BUFFER]="";
-    string str(command[1]);
-    strcpy(  temp , m[str].c_str()  );
+    strcpy(  temp , m[command[1]]  );
+    printf("command222 is %s\n",m[command[1]]);
     char len_bulk[100]="";
     sprintf(len_bulk,"%ld",strlen(temp));
     strcat(send,":");
