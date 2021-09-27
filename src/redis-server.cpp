@@ -23,7 +23,6 @@ int main(int argc, char *argv[])
         printf("command is %s\n",command);
     }
     */
-    
     int client_socket;
     int server_socket;
 
@@ -59,6 +58,10 @@ int main(int argc, char *argv[])
         exit(1);
     }
     //////////////////////////////////////////////////
+    int i=1;
+    int *len_bulk;
+    int num=0;
+    len_bulk=&num;
     while(1){
         client_socket = accept(server_socket, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
         if(client_socket == -1){
@@ -73,14 +76,28 @@ int main(int argc, char *argv[])
             exit(1);
         }
         char send[MAX_BUFFER]="";
-        parse_and_call(send,read);
+        char length[100]="";
+        parse_and_call(send,read,len_bulk);
+        printf("len bulk is %d\n",*len_bulk);
         printf("send is %s\n",send);
+        sprintf(length,"%d",*len_bulk);
+        if(send[0]=='$' && send[1]!='-'){
+            if (write(client_socket,send,14)==-1){
+                perror("write error");
+                close(server_socket);
+                exit(1); 
+            }
+            printf("%dth here\n",i);
+            close(client_socket);
+            continue;
+        }
         if (write(client_socket,send,strlen(send))==-1){
             perror("write error");
             close(server_socket);
             exit(1); 
         }
         close(client_socket);
+        i++;
     }
     close(server_socket);
 
@@ -91,8 +108,8 @@ int main(int argc, char *argv[])
 
 
 
-void parse_and_call(char* send, char * line){
-    char *token=strtok(line,"\r");;
+void parse_and_call(char* send, char * line, int *len_bulk){
+    char *token=strtok(line,"\r");
     int num_bulk=atoi(token+1);
     char *command[num_bulk];
     for(int i=0;i<2*num_bulk;i++){
@@ -144,16 +161,35 @@ void GET(char **command,int num_bulk,char * send){
         strcpy(send,"$-1\r\n");
         return;
     }
-    char temp[MAX_BUFFER]="";
+    char temp[MAX_BUFFER]="$8\r\nhi";//\x00hello\r\n";
     string str(command[1]);
-    strcpy(  temp , m[str].c_str()  );
+    strcat(send,temp);
+    printf("\n\n");
+    send[6]='\x00';
+    send[7]='h';
+    send[8]='e';
+    send[9]='l';
+    send[10]='l';
+    send[11]='o';
+    send[12]='\r';
+    send[13]='\n';
+    for(int i=0;i<14;i++){
+        //printf("%c",*(send+i));
+    }
+    printf("\n\n");
+    printf("in get func is %s\n",send);
+    //strcpy(  temp , m[str].c_str()  );
+    //strcpy(  temp , test  );
+    /*
     char len_bulk[100]="";
     sprintf(len_bulk,"%ld",strlen(temp));
     strcat(send,"$");
-    strcat(send,len_bulk);
+    //strcat(send,len_bulk);
+    strcat(send,"10");
     strcat(send,"\r\n");
-    strcat(send,temp);
+    strcat(send,test);
     strcat(send,"\r\n");
+    */
 }
 
 void SET(char **command,int num_bulk,char * send){
